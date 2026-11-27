@@ -1,0 +1,12 @@
+node_modules/
+.output/
+.wxt/
+dist/
+coverage/
+local-asr/.venv/
+local-asr/__pycache__/
+*.log
+.DS_Store
+Thumbs.db
+.env
+.env.local

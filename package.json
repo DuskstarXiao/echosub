@@ -1,0 +1,36 @@
+{
+  "name": "echosub",
+  "version": "1.0.0",
+  "description": "Real-time browser tab audio to cinematic bilingual subtitles extension for Chrome & Edge",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "dev:edge": "wxt -b edge",
+    "build": "wxt build",
+    "build:edge": "wxt build -b edge",
+    "zip": "wxt zip",
+    "zip:edge": "wxt zip -b edge",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "postinstall": "wxt prepare"
+  },
+  "dependencies": {
+    "lucide-react": "^0.475.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0"
+  },
+  "devDependencies": {
+    "@tailwindcss/vite": "^4.0.9",
+    "@types/chrome": "^0.0.305",
+    "@types/node": "^22.13.4",
+    "@types/react": "^19.0.10",
+    "@types/react-dom": "^19.0.4",
+    "@wxt-dev/module-react": "^1.1.2",
+    "tailwindcss": "^4.0.9",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.7",
+    "wxt": "^0.19.29"
+  }
+}
