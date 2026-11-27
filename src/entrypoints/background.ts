@@ -488,7 +488,7 @@ async function runConnectionTests(): Promise<ConnectionTestResult> {
 async function maybeAutoStartTab(tabId: number, url?: string): Promise<void> {
   if (!url || isRestrictedUrl(url)) return;
   const settings = await getSettings(true);
-  if (!settings.autoStart.enabled) return;
+  if (!settings.autoStart?.enabled) return;
 
   const { locale } = getDictionary(settings.uiLocale);
   const match = matchAutoStartSite(url, settings.autoStart, locale);

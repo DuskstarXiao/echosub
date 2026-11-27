@@ -1,6 +1,6 @@
 {
   "name": "echosub",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Real-time browser tab audio to cinematic bilingual subtitles extension for Chrome & Edge",
   "private": true,
   "type": "module",

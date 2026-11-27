@@ -79,6 +79,14 @@ class TopLayerOverlayManager {
 
     chrome.runtime.onMessage.addListener((message: RuntimeMessage) => {
       if (message.type === 'CONTENT_SYNC') {
+        const safeAppearance = {
+          ...DEFAULT_APPEARANCE,
+          ...(message.appearance ?? {}),
+          position: {
+            ...DEFAULT_APPEARANCE.position,
+            ...(message.appearance?.position ?? {}),
+          },
+        };
         this.state = {
           activeCaption: message.activeCaption,
           lastSegment: message.lastSegment,
@@ -86,8 +94,8 @@ class TopLayerOverlayManager {
           captureMode: message.captureMode,
           activeInputSource: message.activeInputSource,
           overlayVisible: message.overlayVisible,
-          autoStartHint: message.autoStartHint,
-          appearance: message.appearance,
+          autoStartHint: message.autoStartHint ?? null,
+          appearance: safeAppearance,
           errorMessage: message.errorMessage,
         };
 
@@ -96,7 +104,7 @@ class TopLayerOverlayManager {
           (message.captureMode === 'auto' || message.captureMode === 'track');
         this.trackReader?.setEnabled(
           shouldReadTracks,
-          message.appearance.hideNativeTrackCaptions
+          safeAppearance.hideNativeTrackCaptions
         );
 
         this.promoteTopLayer(false);

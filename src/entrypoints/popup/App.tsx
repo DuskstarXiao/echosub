@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { useEchoSubSession } from '../../shared/useSession';
 import { WaveformMeter } from '../../shared/WaveformMeter';
+import { DEFAULT_AUTO_START } from '../../types/settings';
 import type {
   CaptureMode,
   DisplayMode,
@@ -75,6 +76,11 @@ export const PopupApp: React.FC = () => {
   const handleToggleLocale = () => {
     void updateSettings({ uiLocale: locale === 'zh' ? 'en' : 'zh' });
   };
+
+  const autoStart = settings.autoStart ?? DEFAULT_AUTO_START;
+  const enabledSiteCount =
+    (autoStart.enabledSiteIds?.length ?? 0) +
+    (autoStart.customDomains?.length ?? 0);
 
   return (
     <div className="w-[376px] bg-[#090d16] p-4 text-slate-100">
@@ -309,17 +315,16 @@ export const PopupApp: React.FC = () => {
         <span className="font-medium">
           {t.autoStartToggle}
           <span className="ml-1.5 font-mono text-[10px] text-slate-400">
-            ({settings.autoStart.enabledSiteIds.length +
-              settings.autoStart.customDomains.length})
+            ({enabledSiteCount})
           </span>
         </span>
         <input
           type="checkbox"
-          checked={settings.autoStart.enabled}
+          checked={Boolean(autoStart.enabled)}
           onChange={(e) =>
             void updateSettings({
               autoStart: {
-                ...settings.autoStart,
+                ...autoStart,
                 enabled: e.target.checked,
               },
             })

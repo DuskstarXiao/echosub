@@ -17,7 +17,7 @@
     <img src="https://img.shields.io/badge/Edge-Compatible-0078d4?style=flat-square&logo=microsoftedge&logoColor=white" alt="Edge Compatible" />
     <img src="https://img.shields.io/badge/TypeScript-5.7-3178c6?style=flat-square&logo=typescript&logoColor=white" alt="TypeScript" />
     <img src="https://img.shields.io/badge/WXT-React%2019-4f46e5?style=flat-square&logo=react&logoColor=white" alt="WXT React" />
-    <img src="https://img.shields.io/badge/Tests-Vitest%2034%2F34-16a34a?style=flat-square&logo=vitest&logoColor=white" alt="Vitest" />
+    <img src="https://img.shields.io/badge/Tests-Vitest%2035%2F35-16a34a?style=flat-square&logo=vitest&logoColor=white" alt="Vitest" />
     <img src="https://img.shields.io/badge/License-MIT-64748b?style=flat-square" alt="MIT License" />
   </p>
 </div>

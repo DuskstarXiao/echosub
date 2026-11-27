@@ -3,7 +3,8 @@ import {
   matchAutoStartSite,
   normalizeDomainInput,
 } from '../src/core/sites/auto-start';
-import type { AutoStartConfig } from '../src/types/settings';
+import { mergeSettings } from '../src/shared/storage';
+import type { AutoStartConfig, ExtensionSettings } from '../src/types/settings';
 
 const BASE_CONFIG: AutoStartConfig = {
   enabled: true,
@@ -75,5 +76,38 @@ describe('Auto-Start Video Site Matcher', () => {
     expect(
       matchAutoStartSite('https://example.com/blog', BASE_CONFIG)
     ).toBeNull();
+  });
+
+  it('handles missing or legacy settings safely without throwing', () => {
+    expect(
+      matchAutoStartSite('https://www.youtube.com/watch?v=abc', undefined)
+    ).toBeNull();
+    expect(
+      matchAutoStartSite('https://www.youtube.com/watch?v=abc', {
+        enabled: true,
+        enabledSiteIds: undefined as unknown as string[],
+        customDomains: null as unknown as string[],
+      })
+    ).toBeNull();
+
+    // Simulate legacy v2.2.0 settings payload from an older SW/storage missing autoStart
+    const legacy = {
+      asrProvider: 'siliconflow',
+      siliconflowApiKey: 'sk-test',
+      autoStart: undefined,
+      appearance: { displayMode: 'bilingual' },
+    } as unknown as Partial<ExtensionSettings>;
+    const merged = mergeSettings(legacy);
+    expect(merged.autoStart.enabled).toBe(false);
+    expect(Array.isArray(merged.autoStart.enabledSiteIds)).toBe(true);
+    expect(merged.autoStart.enabledSiteIds.length).toBeGreaterThan(0);
+    expect(Array.isArray(merged.autoStart.customDomains)).toBe(true);
+    expect(merged.appearance.position.xPercent).toBe(50);
+
+    // Corrupted non-object autoStart
+    const corrupted = mergeSettings({
+      autoStart: null as unknown as AutoStartConfig,
+    });
+    expect(corrupted.autoStart.enabledSiteIds.length).toBeGreaterThan(0);
   });
 });

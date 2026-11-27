@@ -103,10 +103,10 @@ function hostMatchesDomain(hostname: string, domain: string): boolean {
  */
 export function matchAutoStartSite(
   rawUrl: string | undefined,
-  config: AutoStartConfig,
+  config: AutoStartConfig | undefined | null,
   locale: 'zh' | 'en' = 'zh'
 ): AutoStartMatch | null {
-  if (!config.enabled || !rawUrl) return null;
+  if (!config?.enabled || !rawUrl) return null;
 
   let parsed: URL;
   try {
@@ -119,9 +119,16 @@ export function matchAutoStartSite(
     return null;
   }
 
+  const enabledSiteIds = Array.isArray(config.enabledSiteIds)
+    ? config.enabledSiteIds
+    : [];
+  const customDomains = Array.isArray(config.customDomains)
+    ? config.customDomains
+    : [];
+
   // 1) Check enabled preset video sites (with video-page path filtering)
   for (const preset of PRESET_VIDEO_SITES) {
-    if (!config.enabledSiteIds.includes(preset.id)) continue;
+    if (!enabledSiteIds.includes(preset.id)) continue;
     const domainHit = preset.domains.some((d) =>
       hostMatchesDomain(parsed.hostname, d)
     );
@@ -135,7 +142,7 @@ export function matchAutoStartSite(
   }
 
   // 2) Check user-added custom domains (matches any page on that domain)
-  for (const custom of config.customDomains) {
+  for (const custom of customDomains) {
     const clean = normalizeDomainInput(custom);
     if (clean && hostMatchesDomain(parsed.hostname, clean)) {
       return {

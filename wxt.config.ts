@@ -18,7 +18,7 @@ export default defineConfig({
     short_name: 'EchoSub',
     description:
       'Real-time video & audio bilingual subtitles overlay with fullscreen Top-Layer rendering, transcript timeline, SRT/Markdown export & AI summary.',
-    version: '1.0.0',
+    version: '1.0.1',
     permissions: [
       'tabCapture',
       'offscreen',

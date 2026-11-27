@@ -12,10 +12,38 @@ import {
   type ExtensionSettings,
 } from '../types/settings';
 import {
+  EMPTY_AUDIO_METRICS,
   INITIAL_SESSION_SNAPSHOT,
   type SessionSnapshot,
 } from '../types/subtitle';
-import { loadSettings, saveAppearance, saveSettings } from './storage';
+import {
+  SETTINGS_KEY,
+  loadSettings,
+  mergeSettings,
+  saveAppearance,
+  saveSettings,
+} from './storage';
+
+function normalizeSnapshot(
+  raw?: Partial<SessionSnapshot> | null
+): SessionSnapshot {
+  if (!raw || typeof raw !== 'object') {
+    return {
+      ...INITIAL_SESSION_SNAPSHOT,
+      metrics: { ...EMPTY_AUDIO_METRICS },
+      segments: [],
+    };
+  }
+  return {
+    ...INITIAL_SESSION_SNAPSHOT,
+    ...raw,
+    metrics: {
+      ...EMPTY_AUDIO_METRICS,
+      ...(raw.metrics ?? {}),
+    },
+    segments: Array.isArray(raw.segments) ? raw.segments : [],
+  };
+}
 
 function sendMsg<T = unknown>(
   message: RuntimeMessage
@@ -24,28 +52,36 @@ function sendMsg<T = unknown>(
 }
 
 export function useEchoSubSession() {
-  const [snapshot, setSnapshot] = useState<SessionSnapshot>(
-    INITIAL_SESSION_SNAPSHOT
+  const [snapshot, setSnapshot] = useState<SessionSnapshot>(() =>
+    normalizeSnapshot(INITIAL_SESSION_SNAPSHOT)
   );
-  const [settings, setSettings] = useState<ExtensionSettings>(DEFAULT_SETTINGS);
+  const [settings, setSettings] = useState<ExtensionSettings>(() =>
+    mergeSettings(DEFAULT_SETTINGS)
+  );
   const [loading, setLoading] = useState(true);
   const [actionError, setActionError] = useState<string | null>(null);
 
   useEffect(() => {
     let active = true;
 
-    // Load directly from chrome.storage.local AND sync live snapshot from background SW
+    // Load directly from chrome.storage.local AND sync live snapshot from background SW.
+    // Always pass settings through mergeSettings() so upgrading from older SW versions
+    // missing newly added nested fields (e.g., autoStart) can never crash the UI.
     void Promise.all([
-      loadSettings().catch(() => DEFAULT_SETTINGS),
+      loadSettings().catch(() => mergeSettings(DEFAULT_SETTINGS)),
       sendMsg<{ snapshot: SessionSnapshot; settings: ExtensionSettings }>({
         type: 'GET_SESSION_STATE',
       }).catch(() => null),
     ])
       .then(([storedSettings, res]) => {
         if (!active) return;
-        setSettings(res?.ok && res.data?.settings ? res.data.settings : storedSettings);
+        const incomingSettings =
+          res?.ok && res.data?.settings
+            ? mergeSettings({ ...storedSettings, ...res.data.settings })
+            : mergeSettings(storedSettings);
+        setSettings(incomingSettings);
         if (res?.ok && res.data?.snapshot) {
-          setSnapshot(res.data.snapshot);
+          setSnapshot(normalizeSnapshot(res.data.snapshot));
         }
       })
       .finally(() => {
@@ -54,13 +90,27 @@ export function useEchoSubSession() {
 
     const listener = (message: RuntimeMessage) => {
       if (message.type === 'SESSION_SNAPSHOT') {
-        setSnapshot(message.snapshot);
+        setSnapshot(normalizeSnapshot(message.snapshot));
+      }
+    };
+    const storageListener = (
+      changes: Record<string, chrome.storage.StorageChange>,
+      areaName: string
+    ) => {
+      if (areaName === 'local' && changes[SETTINGS_KEY]?.newValue) {
+        setSettings(
+          mergeSettings(
+            changes[SETTINGS_KEY].newValue as Partial<ExtensionSettings>
+          )
+        );
       }
     };
     chrome.runtime.onMessage.addListener(listener);
+    chrome.storage?.onChanged?.addListener(storageListener);
     return () => {
       active = false;
       chrome.runtime.onMessage.removeListener(listener);
+      chrome.storage?.onChanged?.removeListener(storageListener);
     };
   }, []);
 
@@ -103,7 +153,24 @@ export function useEchoSubSession() {
 
   const updateSettings = useCallback(
     async (patch: Partial<ExtensionSettings>) => {
-      setSettings((prev) => ({ ...prev, ...patch }));
+      setSettings((prev) =>
+        mergeSettings({
+          ...prev,
+          ...patch,
+          autoStart: patch.autoStart
+            ? { ...prev.autoStart, ...patch.autoStart }
+            : prev.autoStart,
+          appearance: patch.appearance
+            ? {
+                ...prev.appearance,
+                ...patch.appearance,
+                position: patch.appearance.position
+                  ? { ...prev.appearance.position, ...patch.appearance.position }
+                  : prev.appearance.position,
+              }
+            : prev.appearance,
+        })
+      );
       // Persist directly to chrome.storage.local immediately so keys are never lost
       const persisted = await saveSettings(patch);
       setSettings(persisted);

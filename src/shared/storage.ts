@@ -6,12 +6,12 @@ import {
   type ExtensionSettings,
 } from '../types/settings';
 
-const SETTINGS_KEY = 'echosub_settings_v1';
+export const SETTINGS_KEY = 'echosub_settings_v1';
 
 export function mergeSettings(
   stored?: Partial<ExtensionSettings> | null
 ): ExtensionSettings {
-  if (!stored) {
+  if (!stored || typeof stored !== 'object') {
     return {
       ...DEFAULT_SETTINGS,
       autoStart: {
@@ -25,25 +25,42 @@ export function mergeSettings(
       },
     };
   }
+  const rawAutoStart =
+    stored.autoStart && typeof stored.autoStart === 'object'
+      ? stored.autoStart
+      : undefined;
+  const rawAppearance =
+    stored.appearance && typeof stored.appearance === 'object'
+      ? stored.appearance
+      : undefined;
+  const rawPosition =
+    rawAppearance?.position && typeof rawAppearance.position === 'object'
+      ? rawAppearance.position
+      : undefined;
+
   return {
     ...DEFAULT_SETTINGS,
     ...stored,
     autoStart: {
       ...DEFAULT_AUTO_START,
-      ...(stored.autoStart ?? {}),
-      enabledSiteIds: stored.autoStart?.enabledSiteIds
-        ? [...stored.autoStart.enabledSiteIds]
+      ...(rawAutoStart ?? {}),
+      enabled:
+        typeof rawAutoStart?.enabled === 'boolean'
+          ? rawAutoStart.enabled
+          : DEFAULT_AUTO_START.enabled,
+      enabledSiteIds: Array.isArray(rawAutoStart?.enabledSiteIds)
+        ? [...rawAutoStart.enabledSiteIds]
         : [...DEFAULT_AUTO_START.enabledSiteIds],
-      customDomains: stored.autoStart?.customDomains
-        ? [...stored.autoStart.customDomains]
+      customDomains: Array.isArray(rawAutoStart?.customDomains)
+        ? [...rawAutoStart.customDomains]
         : [...DEFAULT_AUTO_START.customDomains],
     },
     appearance: {
       ...DEFAULT_APPEARANCE,
-      ...(stored.appearance ?? {}),
+      ...(rawAppearance ?? {}),
       position: {
         ...DEFAULT_APPEARANCE.position,
-        ...(stored.appearance?.position ?? {}),
+        ...(rawPosition ?? {}),
       },
     },
   };
@@ -61,6 +78,18 @@ export async function saveSettings(
   const next = mergeSettings({
     ...current,
     ...patch,
+    autoStart: patch.autoStart
+      ? {
+          ...current.autoStart,
+          ...patch.autoStart,
+          enabledSiteIds: Array.isArray(patch.autoStart.enabledSiteIds)
+            ? [...patch.autoStart.enabledSiteIds]
+            : [...current.autoStart.enabledSiteIds],
+          customDomains: Array.isArray(patch.autoStart.customDomains)
+            ? [...patch.autoStart.customDomains]
+            : [...current.autoStart.customDomains],
+        }
+      : current.autoStart,
     appearance: patch.appearance
       ? {
           ...current.appearance,

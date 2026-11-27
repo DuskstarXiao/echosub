@@ -45,6 +45,7 @@ import { WaveformMeter } from '../../shared/WaveformMeter';
 import type { ConnectionTestResult } from '../../types/messages';
 import {
   DEFAULT_APPEARANCE,
+  DEFAULT_AUTO_START,
   LLM_PRESETS,
   type LlmPresetId,
   type UiLocale,
@@ -252,14 +253,18 @@ export const SidePanelApp: React.FC = () => {
     flashSaved();
   };
 
+  const autoStart = settings.autoStart ?? DEFAULT_AUTO_START;
+  const enabledSiteIds = autoStart.enabledSiteIds ?? [];
+  const customDomains = autoStart.customDomains ?? [];
+
   const togglePresetSite = (siteId: string) => {
-    const exists = settings.autoStart.enabledSiteIds.includes(siteId);
+    const exists = enabledSiteIds.includes(siteId);
     const nextIds = exists
-      ? settings.autoStart.enabledSiteIds.filter((id) => id !== siteId)
-      : [...settings.autoStart.enabledSiteIds, siteId];
+      ? enabledSiteIds.filter((id) => id !== siteId)
+      : [...enabledSiteIds, siteId];
     void updateSettings({
       autoStart: {
-        ...settings.autoStart,
+        ...autoStart,
         enabledSiteIds: nextIds,
       },
     });
@@ -269,11 +274,11 @@ export const SidePanelApp: React.FC = () => {
   const handleAddCustomDomain = () => {
     const clean = normalizeDomainInput(customDomainInput);
     if (!clean) return;
-    if (!settings.autoStart.customDomains.includes(clean)) {
+    if (!customDomains.includes(clean)) {
       void updateSettings({
         autoStart: {
-          ...settings.autoStart,
-          customDomains: [...settings.autoStart.customDomains, clean],
+          ...autoStart,
+          customDomains: [...customDomains, clean],
         },
       });
       flashSaved();
@@ -284,10 +289,8 @@ export const SidePanelApp: React.FC = () => {
   const handleRemoveCustomDomain = (domain: string) => {
     void updateSettings({
       autoStart: {
-        ...settings.autoStart,
-        customDomains: settings.autoStart.customDomains.filter(
-          (d) => d !== domain
-        ),
+        ...autoStart,
+        customDomains: customDomains.filter((d) => d !== domain),
       },
     });
     flashSaved();
@@ -310,7 +313,7 @@ export const SidePanelApp: React.FC = () => {
                   {t.appName}
                 </span>
                 <span className="font-mono text-[9px] text-slate-500">
-                  v2.3.0
+                  v2.3.1
                 </span>
                 <span
                   className={`rounded-full px-1.5 py-0.5 text-[10px] font-semibold ${
@@ -1432,11 +1435,11 @@ export const SidePanelApp: React.FC = () => {
                 </div>
                 <input
                   type="checkbox"
-                  checked={settings.autoStart.enabled}
+                  checked={Boolean(autoStart.enabled)}
                   onChange={(e) => {
                     void updateSettings({
                       autoStart: {
-                        ...settings.autoStart,
+                        ...autoStart,
                         enabled: e.target.checked,
                       },
                     });
@@ -1448,9 +1451,7 @@ export const SidePanelApp: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-1.5">
                 {PRESET_VIDEO_SITES.map((site) => {
-                  const checked = settings.autoStart.enabledSiteIds.includes(
-                    site.id
-                  );
+                  const checked = enabledSiteIds.includes(site.id);
                   return (
                     <label
                       key={site.id}
@@ -1495,9 +1496,9 @@ export const SidePanelApp: React.FC = () => {
                 </button>
               </div>
 
-              {settings.autoStart.customDomains.length > 0 && (
+              {customDomains.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">
-                  {settings.autoStart.customDomains.map((domain) => (
+                  {customDomains.map((domain) => (
                     <span
                       key={domain}
                       className="inline-flex items-center gap-1 rounded-full border border-indigo-400/40 bg-indigo-500/15 px-2 py-0.5 text-[10px] font-medium text-indigo-200"
